@@ -1,4 +1,4 @@
-table_name("vscode_packages")
+table_name("vscode_extensions")
 description("Lists all vscode extensions in a directory or globally installed in a system.")
 schema([
     Column("name", TEXT, "Package display name"),
@@ -11,7 +11,7 @@ schema([
       index=True),
 ])
 attributes(user_data=True)
-implementation("applications/vscode_extensions@genAtomPackages")
+implementation("applications/vscode_extensions@genVSCodeExtensions")
 examples([
-  "select * from atom_packages",
+  "select * from vscode_extensions",
 ])

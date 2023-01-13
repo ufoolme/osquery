@@ -178,6 +178,7 @@ function(generateTestsIntegrationTablesTestsTest)
       startup_items.cpp
       syslog_events.cpp
       systemd_units.cpp
+      vscode_extensions.cpp
       yara_events.cpp
       yara.cpp
       yum_sources.cpp
@@ -257,6 +258,7 @@ function(generateTestsIntegrationTablesTestsTest)
       unified_log.cpp
       user_interaction_events.cpp
       virtual_memory_info.cpp
+      vscode_extensions.cpp
       wifi_networks.cpp
       wifi_status.cpp
       wifi_survey.cpp
