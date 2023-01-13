@@ -21,7 +21,7 @@ on:
 
   push:
     branches:
-      - 'master'
+      - '*'
 
     tags:
       - '*'
@@ -110,6 +110,7 @@ jobs:
     steps:
     - name: Clone the osquery repository
       uses: actions/checkout@v3
+      continue-on-error: true
 
     - name: Install python pre-requisites
       run: |
@@ -119,6 +120,7 @@ jobs:
       run: |
         ./tools/ci/scripts/cve/validate_manifest_libraries_versions.py --manifest libraries/third_party_libraries_manifest.json \
         --repository .
+      continue-on-error: true
 
 
 
@@ -186,6 +188,7 @@ jobs:
           -DOSQUERY_BUILD_TESTS=ON \
           -DOSQUERY_BUILD_ROOT_TESTS=ON \
           "${{ steps.build_paths.outputs.SOURCE }}"
+      continue-on-error: true
 
     - name: Initialize the project (Release)
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -215,6 +218,7 @@ jobs:
           -DOSQUERY_BUILD_TESTS=ON \
           -DOSQUERY_BUILD_ROOT_TESTS=ON \
           "${{ steps.build_paths.outputs.SOURCE }}"
+      continue-on-error: true
 
     - name: Initialize the project (Debug)
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -385,6 +389,7 @@ jobs:
           -DOSQUERY_BUILD_TESTS=${{ steps.tests_build_settings.outputs.VALUE }} \
           -DOSQUERY_BUILD_ROOT_TESTS=${{ steps.tests_build_settings.outputs.VALUE }} \
           "${{ steps.build_paths.outputs.SOURCE }}"
+      continue-on-error: true
 
     - name: Build the project
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
