@@ -21,7 +21,7 @@ on:
 
   push:
     branches:
-      - '*'
+      - 'master'
 
     tags:
       - '*'
@@ -70,7 +70,6 @@ jobs:
     - name: Check the copyright headers
       run: |
         ./tools/ci/scripts/check_copyright_headers.py
-      continue-on-error: true
 
     - name: Setup the build paths
       shell: bash
@@ -84,7 +83,6 @@ jobs:
 
         echo "SOURCE=$(realpath ${rel_source_path})" >> $GITHUB_OUTPUT
         echo "BINARY=$(realpath ${rel_build_path})" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Configure the project
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -93,7 +91,6 @@ jobs:
           -DOSQUERY_TOOLCHAIN_SYSROOT:PATH="/usr/local/osquery-toolchain" \
           -DOSQUERY_ENABLE_FORMAT_ONLY=ON \
           "${{ steps.build_paths.outputs.SOURCE }}"
-      continue-on-error: true
 
     # Formatting is tested against the clang-format binary we ship
     # with the osquery-toolchain, so this job is only performed once on
@@ -102,7 +99,6 @@ jobs:
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       run:
         cmake --build . --target format_check
-      continue-on-error: true
 
 
 
@@ -114,18 +110,15 @@ jobs:
     steps:
     - name: Clone the osquery repository
       uses: actions/checkout@v3
-      continue-on-error: true
 
     - name: Install python pre-requisites
       run: |
         pip3 install -r ./tools/ci/scripts/cve/requirements.txt
-      continue-on-error: true
 
     - name: Verify the third party libraries manifest
       run: |
         ./tools/ci/scripts/cve/validate_manifest_libraries_versions.py --manifest libraries/third_party_libraries_manifest.json \
         --repository .
-      continue-on-error: true
 
 
 
@@ -166,7 +159,6 @@ jobs:
         echo "SOURCE=$(realpath ${rel_source_path})" >> $GITHUB_OUTPUT
         echo "BINARY=$(realpath ${rel_build_path})" >> $GITHUB_OUTPUT
         echo "REL_BINARY=${rel_build_path}" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Update the cache (git submodules)
       uses: actions/cache@v3
@@ -183,7 +175,6 @@ jobs:
       working-directory: ${{ steps.build_paths.outputs.SOURCE }}
       run: |
         git submodule sync --recursive
-      continue-on-error: true
 
     - name: Configure the project (Release)
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -195,13 +186,11 @@ jobs:
           -DOSQUERY_BUILD_TESTS=ON \
           -DOSQUERY_BUILD_ROOT_TESTS=ON \
           "${{ steps.build_paths.outputs.SOURCE }}"
-      continue-on-error: true
 
     - name: Initialize the project (Release)
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       run: |
         cmake --build . --target prepare_for_ide
-      continue-on-error: true
 
     - name: Run cppcheck (Release)
       shell: bash
@@ -209,7 +198,6 @@ jobs:
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       run: |
         cmake --build . --target cppcheck 2>&1 | tee cppcheck_release.txt
-      continue-on-error: true
 
     - name: Store the cppcheck log (Release)
       uses: actions/upload-artifact@v1
@@ -227,13 +215,11 @@ jobs:
           -DOSQUERY_BUILD_TESTS=ON \
           -DOSQUERY_BUILD_ROOT_TESTS=ON \
           "${{ steps.build_paths.outputs.SOURCE }}"
-      continue-on-error: true
 
     - name: Initialize the project (Debug)
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       run: |
         cmake --build . --target prepare_for_ide
-      continue-on-error: true
 
     - name: Run cppcheck (Debug)
       shell: bash
@@ -241,7 +227,6 @@ jobs:
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       run: |
         cmake --build . --target cppcheck 2>&1 | tee cppcheck_debug.txt
-      continue-on-error: true
 
     - name: Store the cppcheck log (Debug)
       uses: actions/upload-artifact@v1
@@ -277,7 +262,6 @@ jobs:
       id: build_job_count
       run: |
         echo "VALUE=$(($(nproc) + 1))" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Select the build options for the tests
       shell: bash
@@ -288,7 +272,6 @@ jobs:
         else
           echo "VALUE=ON" >> $GITHUB_OUTPUT
         fi
-      continue-on-error: true
 
     # We don't have enough space on the worker to actually generate all
     # the debug symbols (osquery + dependencies), so we have a flag to
@@ -302,7 +285,6 @@ jobs:
         else
           echo "VALUE=OFF" >> $GITHUB_OUTPUT
         fi
-      continue-on-error: true
 
     # When we spawn in the container, we are root; create an unprivileged
     # user now so that we can later use it to launch the normal user tests
@@ -312,7 +294,6 @@ jobs:
       run: |
         useradd -m -s /bin/bash unprivileged_user
         echo "NAME=unprivileged_user" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     # Due to how the RPM packaging tools work, we have to adhere to some
     # character count requirements in the build path vs source path.
@@ -347,7 +328,6 @@ jobs:
         echo "PACKAGE_DATA=$(realpath ${rel_package_data_path})" >> $GITHUB_OUTPUT
         echo "REL_PACKAGE_BUILD=${rel_package_build_path}" >> $GITHUB_OUTPUT
         echo "PACKAGE_BUILD=$(realpath ${rel_package_build_path})" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Clone the osquery-packaging repository
       run: |
@@ -355,7 +335,6 @@ jobs:
           ${{ steps.build_paths.outputs.PACKAGING }}
         cd ${{ steps.build_paths.outputs.PACKAGING }}
         git checkout ${{ env.PACKAGING_COMMIT }}
-      continue-on-error: true
 
     # One of the tests in the test suit will spawn a Docker container
     # using this socket. Allow the unprivileged user we created
@@ -364,7 +343,6 @@ jobs:
       if: matrix.build_type != 'RelWithDebInfo'
       run: |
         chmod 666 /var/run/docker.sock
-      continue-on-error: true
 
     - name: Update the cache (ccache)
       uses: actions/cache@v3
@@ -392,7 +370,6 @@ jobs:
       working-directory: ${{ steps.build_paths.outputs.SOURCE }}
       run: |
         git submodule sync --recursive
-      continue-on-error: true
 
     - name: Configure the project
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -408,7 +385,6 @@ jobs:
           -DOSQUERY_BUILD_TESTS=${{ steps.tests_build_settings.outputs.VALUE }} \
           -DOSQUERY_BUILD_ROOT_TESTS=${{ steps.tests_build_settings.outputs.VALUE }} \
           "${{ steps.build_paths.outputs.SOURCE }}"
-      continue-on-error: true
 
     - name: Build the project
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -418,7 +394,6 @@ jobs:
 
       run: |
         cmake --build . -j ${{ steps.build_job_count.outputs.VALUE }}
-      continue-on-error: true
 
     # Only run the tests on Debug and Release configurations; skip RelWithDebInfo
     - name: Run the tests as normal user
@@ -426,14 +401,12 @@ jobs:
       if: matrix.build_type != 'RelWithDebInfo'
       run: |
         sudo -u ${{ steps.unprivileged_user.outputs.NAME }} ctest --build-nocmake -LE "root-required" -V
-      continue-on-error: true
 
     - name: Run the tests as root user
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       if: matrix.build_type != 'RelWithDebInfo'
       run: |
         sudo -u root ctest --build-nocmake -L "root-required" -V
-      continue-on-error: true
 
     - name: Run the install target
       if: matrix.build_type == 'RelWithDebInfo'
@@ -448,7 +421,6 @@ jobs:
           --build . \
           --target install \
           -j ${{ steps.build_job_count.outputs.VALUE }}
-      continue-on-error: true
 
     # Since we need to run CMake to create the packages with osquery-packaging, the
     # configuration will fail unless the C and C++ compilers are found
@@ -457,7 +429,6 @@ jobs:
       run: |
         sudo apt update
         sudo apt install build-essential gcc g++ -y
-      continue-on-error: true
 
     - name: Create the packages
       if: matrix.build_type == 'RelWithDebInfo'
@@ -484,7 +455,6 @@ jobs:
           cmake --build . \
             --target package
         done
-      continue-on-error: true
 
     - name: Locate the packages
       if: matrix.build_type == 'RelWithDebInfo'
@@ -497,7 +467,6 @@ jobs:
         echo "REL_UNSIGNED_RELEASE_RPM_PATH=$(ls ${{ steps.build_paths.outputs.REL_PACKAGE_BUILD }}/osquery-?.*.rpm)" >> $GITHUB_OUTPUT
         echo "REL_UNSIGNED_DEBUG_RPM_PATH=$(ls ${{ steps.build_paths.outputs.REL_PACKAGE_BUILD }}/osquery-debuginfo-*.rpm)" >> $GITHUB_OUTPUT
         echo "REL_UNSIGNED_RELEASE_TGZ_PATH=$(ls ${{ steps.build_paths.outputs.REL_PACKAGE_BUILD }}/*linux_x86_64.tar.gz)" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Store the unsigned release package data artifact
       if: matrix.build_type == 'RelWithDebInfo'
@@ -545,8 +514,7 @@ jobs:
     # actions will require the disk space to create the archives.
     - name: Reclaim disk space
       run: |
-        rm -rfv ${{ steps.build_paths.outputs.BINARY }}
-      continue-on-error: true
+        rm -rf ${{ steps.build_paths.outputs.BINARY }}
 
 
 
@@ -574,7 +542,6 @@ jobs:
       id: build_job_count
       run: |
         echo "VALUE=$(($(sysctl -n hw.logicalcpu) + 1))" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Setup the build paths
       shell: bash
@@ -606,7 +573,6 @@ jobs:
         echo "PACKAGE_DATA=$(pwd)/${rel_package_data_path}" >> $GITHUB_OUTPUT
         echo "REL_PACKAGE_BUILD=${rel_package_build_path}" >> $GITHUB_OUTPUT
         echo "PACKAGE_BUILD=$(pwd)/${rel_package_build_path}" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Clone the osquery repository
       uses: actions/checkout@v2
@@ -651,7 +617,6 @@ jobs:
       working-directory: ${{ steps.build_paths.outputs.SOURCE }}
       run: |
         git submodule sync --recursive
-      continue-on-error: true
 
     - name: Install build dependencies
       run: |
@@ -661,7 +626,6 @@ jobs:
           bison \
           coreutils \
           gnu-sed
-      continue-on-error: true
 
     - name: Install tests dependencies
       id: install_test_deps
@@ -677,7 +641,6 @@ jobs:
                      osquery
 
         echo "PYTHON_ROOT=${python_root}" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Install CMake
       shell: bash
@@ -686,7 +649,6 @@ jobs:
           "${{ steps.build_paths.outputs.DOWNLOADS }}" \
           "${{ steps.build_paths.outputs.INSTALL }}" \
           "3.21.4"
-      continue-on-error: true
 
     - name: Select the Xcode version
       shell: bash
@@ -702,7 +664,6 @@ jobs:
         else
           echo "DEPLOYMENT_TARGET=10.15" >> $GITHUB_OUTPUT
         fi
-      continue-on-error: true
 
     # We don't have enough space on the worker to actually generate all
     # the debug symbols (osquery + dependencies), so we have a flag to
@@ -716,7 +677,6 @@ jobs:
         else
           echo "VALUE=OFF" >> $GITHUB_OUTPUT
         fi
-      continue-on-error: true
 
     - name: Configure the project
       shell: bash
@@ -736,7 +696,6 @@ jobs:
           -DOSQUERY_NO_DEBUG_SYMBOLS=${{ steps.debug_symbols_settings.outputs.VALUE }} \
           -DPython3_ROOT_DIR=${{ steps.install_test_deps.outputs.PYTHON_ROOT }} \
           ${{ steps.build_paths.outputs.SOURCE }}
-      continue-on-error: true
 
     - name: Build the project
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -746,14 +705,12 @@ jobs:
 
       run: |
         cmake --build . -j ${{ steps.build_job_count.outputs.VALUE }}
-      continue-on-error: true
 
     - name: Run the tests
       if: matrix.architecture == 'x86_64'
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
       run: |
         ctest --build-nocmake -V
-      continue-on-error: true
 
     - name: Run the install target
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -767,7 +724,6 @@ jobs:
           --build . \
           --target install \
           -j ${{ steps.build_job_count.outputs.VALUE }}
-      continue-on-error: true
 
     - name: Create the package data
       working-directory: ${{ steps.build_paths.outputs.PACKAGE_BUILD }}
@@ -775,7 +731,6 @@ jobs:
         tar pcvzf package_data.tar.gz \
           -C ${{ steps.build_paths.outputs.PACKAGE_DATA }} \
           .
-      continue-on-error: true
 
     - name: Locate the package data
       if: matrix.build_type == 'Release'
@@ -783,7 +738,6 @@ jobs:
       shell: bash
       run: |
         echo "REL_UNSIGNED_RELEASE_PACKAGE_DATA_PATH=$(ls ${{ steps.build_paths.outputs.REL_PACKAGE_BUILD }}/package_data.tar.gz)" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Store the ${{ matrix.architecture }} unsigned release package data artifact
       if: matrix.build_type == 'Release'
@@ -796,7 +750,6 @@ jobs:
       if: matrix.architecture == 'x86_64'
       run: |
         ( cd workspace && ${{ steps.build_paths.outputs.SOURCE }}/tools/ci/scripts/macos/package_tests.sh build macos_tests_${{ matrix.build_type }} )
-      continue-on-error: true
 
     - name: Store the packaged tests for the x86_64 macOS-11 worker
       if: matrix.architecture == 'x86_64'
@@ -810,7 +763,6 @@ jobs:
     - name: Reclaim disk space
       run: |
         rm -rf ${{ steps.build_paths.outputs.BINARY }}
-      continue-on-error: true
 
 
 
@@ -860,23 +812,19 @@ jobs:
             "workspace/downloads" \
             "workspace/install" \
             "3.21.4"
-        continue-on-error: true
 
       - name: Extract the tests
         run: |
           tar xzf macos_tests_Release.tar.gz
           tar xzf macos_tests_Debug.tar.gz
-        continue-on-error: true
 
       - name: Run the Debug tests
         run: |
           ( cd macos_tests_Debug && ./run.sh )
-        continue-on-error: true
 
       - name: Run the Release tests
         run: |
           ( cd macos_tests_Release && ./run.sh )
-        continue-on-error: true
 
 
 
@@ -905,7 +853,6 @@ jobs:
             "workspace/downloads" \
             "workspace/install" \
             "3.21.4"
-        continue-on-error: true
 
       - uses: actions/download-artifact@v2
         with:
@@ -920,7 +867,6 @@ jobs:
       - name: Create the universal package data
         run: |
           tools/ci/scripts/macos/build_universal_package_data.sh
-        continue-on-error: true
 
       - name: Store the universal unsigned release package data artifact
         uses: actions/upload-artifact@v1
@@ -934,7 +880,6 @@ jobs:
 
           cd osquery-packaging
           git checkout ${{ env.PACKAGING_COMMIT }}
-        continue-on-error: true
 
       - name: Create the packages
         shell: bash
@@ -953,7 +898,6 @@ jobs:
             cmake --build package_build \
               --target package
           done
-        continue-on-error: true
 
       - name: Locate the packages
         id: packages
@@ -961,7 +905,6 @@ jobs:
         run: |
           echo "REL_UNSIGNED_RELEASE_PKG_PATH=$(ls package_build/*.pkg)" >> $GITHUB_OUTPUT
           echo "REL_UNSIGNED_RELEASE_TGZ_PATH=$(ls package_build/*.tar.gz)" >> $GITHUB_OUTPUT
-        continue-on-error: true
 
       - name: Store the PKG unsigned release packages
         uses: actions/upload-artifact@v1
@@ -1020,7 +963,6 @@ jobs:
         echo "INSTALL=$base_dir\$rel_install_path" >> $env:GITHUB_OUTPUT
         echo "PACKAGING=$base_dir\$rel_packaging_path" >> $env:GITHUB_OUTPUT
         echo "PACKAGE_DATA=$base_dir\$rel_package_data_path" >> $env:GITHUB_OUTPUT
-      continue-on-error: true
 
     # Symbolic links are supported by default on Linux and macOS. On
     # Windows, we have to enable them explicitly. They are used to
@@ -1030,7 +972,6 @@ jobs:
       run: |
         git config --global core.autocrlf false
         git config --global core.symlinks true
-      continue-on-error: true
 
     - name: Clone the osquery repository
       uses: actions/checkout@v2
@@ -1046,7 +987,6 @@ jobs:
         $osquery_version=$(git describe --tags --abbrev=0)
 
         echo "VALUE=$osquery_version" >> $env:GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Clone the osquery-packaging repository
       run: |
@@ -1054,7 +994,6 @@ jobs:
         git clone ${{ env.PACKAGING_REPO }}
         cd ${{ steps.build_paths.outputs.PACKAGING }}
         git checkout ${{ env.PACKAGING_COMMIT }}
-      continue-on-error: true
 
     - name: Update the cache (git submodules)
       uses: actions/cache@v3
@@ -1100,7 +1039,6 @@ jobs:
         $python_root_directory = (Get-Item $python_executable_path).Directory.FullName
 
         echo "VALUE=$python_root_directory" >> $env:GITHUB_OUTPUT
-      continue-on-error: true
 
     # Install the Python dependencies needed for our testing framework
     - name: Install tests prerequisites
@@ -1114,14 +1052,12 @@ jobs:
                               thrift==0.11.0 `
                               osquery `
                               pywin32
-      continue-on-error: true
 
     - name: Install Strawberry Perl
       working-directory: ${{ steps.build_paths.outputs.SOURCE }}
       shell: powershell
       run: |
         tools\ci\scripts\install_openssl_formula_dependencies.ps1
-      continue-on-error: true
 
     # TODO: Implement a cache so we don't keep hitting the server at each run
     - name: Install CMake
@@ -1140,7 +1076,6 @@ jobs:
         7z x -o${{ steps.build_paths.outputs.INSTALL }} -y $archive_name
 
         echo "${{ steps.build_paths.outputs.INSTALL }}\$folder_name\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      continue-on-error: true
 
     # TODO: Implement a cache so we don't keep hitting the server at each run
     - name: Install sccache
@@ -1156,7 +1091,6 @@ jobs:
         7z x -o${{ steps.build_paths.outputs.INSTALL }}\sccache -y $archive_name
 
         echo "${{ steps.build_paths.outputs.INSTALL }}\sccache" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      continue-on-error: true
 
     # TODO: Implement a cache so we don't keep hitting the server at each run
     - name: Install Ninja
@@ -1172,7 +1106,6 @@ jobs:
         7z x -o${{ steps.build_paths.outputs.INSTALL }}\ninja -y $archive_name
 
         echo "${{ steps.build_paths.outputs.INSTALL }}\ninja" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-      continue-on-error: true
 
     - name: Configure the project
       shell: cmd
@@ -1194,7 +1127,6 @@ jobs:
           -DCMAKE_CXX_COMPILER_LAUNCHER="sccache.exe" ^
           -DPython3_ROOT_DIR=${{ steps.python_root_directory.outputs.VALUE }} ^
           ${{ steps.build_paths.outputs.SOURCE }}
-      continue-on-error: true
 
     - name: Determine compiler version
       id: determine_compiler_version
@@ -1232,7 +1164,6 @@ jobs:
         echo "Found compiler version $version"
 
         echo "COMPILER_VERSION=$version" >> $env:GITHUB_OUTPUT
-    continue-on-error: true
 
     - name: Update the cache (sccache)
       uses: actions/cache@v3
@@ -1260,7 +1191,6 @@ jobs:
 
         if %errorlevel% neq 0 exit /b %errorlevel%
         sccache.exe --stop-server
-      continue-on-error: true
 
     - name: Run the tests
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -1268,7 +1198,6 @@ jobs:
       run: |
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars${{ matrix.bitness }}.bat"
         ctest --build-nocmake -C Release -V
-      continue-on-error: true
 
     - name: Run the install target
       working-directory: ${{ steps.build_paths.outputs.BINARY }}
@@ -1279,7 +1208,6 @@ jobs:
 
       run: |
         cmake --build . --target install -j 3
-      continue-on-error: true
 
     - name: Create the packages
       shell: cmd
@@ -1324,7 +1252,6 @@ jobs:
           --target package
 
         if %errorlevel% neq 0 exit /b %errorlevel%
-      continue-on-error: true
 
     - name: Locate the packages
       working-directory: ${{ steps.build_paths.outputs.PACKAGE_BUILD }}
@@ -1334,7 +1261,6 @@ jobs:
         echo "REL_UNSIGNED_RELEASE_PACKAGE_DATA_PATH=$(ls *.zip)" >> $GITHUB_OUTPUT
         echo "REL_UNSIGNED_RELEASE_MSI_PATH=$(ls *.msi)" >> $GITHUB_OUTPUT
         echo "REL_UNSIGNED_RELEASE_NUPKG_PATH=$(ls *.nupkg)" >> $GITHUB_OUTPUT
-      continue-on-error: true
 
     - name: Store the unsigned release package data artifact
       uses: actions/upload-artifact@v1
@@ -1360,7 +1286,6 @@ jobs:
       shell: powershell
       run: |
         rm -r -Force ${{ steps.build_paths.outputs.BINARY }}
-      continue-on-error: true
 
   # This job is here as a github status check -- it allows us to move the dependency from
   # being on all the jobs to this single one.
