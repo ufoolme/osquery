@@ -26,7 +26,7 @@ namespace tables {
 const std::vector<std::string> kPackageKeys{
     "name", "version", "description", "license", "homepage"};
 
-void genReadJSONAndAddRow(const std::string& uid,
+void genLoadJSONAndAddRow(const std::string& uid,
                           const std::string& package,
                           QueryData& results) {
   std::string json;
@@ -75,7 +75,7 @@ QueryData genVSCodeExtensions(QueryContext& context) {
     resolveFilePattern(confDir.second / "extensions" / "%" / "extensions.json",
                        packages);
     for (const auto& package : packages) {
-      genReadJSONAndAddRow(confDir.first, package, results);
+      genLoadJSONAndAddRow(confDir.first, package, results);
     }
   }
 
